@@ -25,7 +25,13 @@ st.set_page_config(page_title="PA DCNR Grant Assistant", page_icon="🌲", layou
 # IMPORTANT: Replace this with your actual OpenAI API key
 # For local development, use the hardcoded key
 # For Streamlit Cloud, it will use the secret
-OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY", "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")
+try:
+    # This line automatically gets the key from Streamlit Cloud secrets
+    OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+except (FileNotFoundError, KeyError):
+    # Fallback for local development
+    OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+#OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY", "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")
 
 # Custom CSS for animations and styling
 st.markdown("""
