@@ -1133,7 +1133,7 @@ def main():
     # Animated header with PA logo
     st.markdown("""
     <div class="main-header">
-        <img src="https://www.pa.gov/content/dam/copapwp-pagov/en/dcnr/images/logo/PA-Keystone-RGB.svg" 
+        <img src="https://www.pa.gov/content/dam/copapwp-pagov/en/global/images/CoPA%20Logo%20-%20Horizontal%20Lockup%201.svg" 
              alt="Pennsylvania" class="pa-logo" style="filter: brightness(0) invert(1);">
         <h1 style="color: white; text-align: center; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
             <span class="floating">🌲</span> PA DCNR Grant Assistant <span class="floating">🌲</span>
