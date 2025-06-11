@@ -80,6 +80,7 @@ def get_regional_advisor(county_name):
     """Get the regional advisor for a given county"""
     county_lower = county_name.lower().strip()
     
+    # First try exact match
     for region_num, region_data in REGIONAL_ADVISORS["regions"].items():
         if county_lower in region_data["counties"]:
             return {
@@ -89,6 +90,29 @@ def get_regional_advisor(county_name):
                 "email": region_data["email"],
                 "counties_served": region_data["counties"]
             }
+    
+    # If no exact match, try fuzzy matching for common typos
+    from difflib import get_close_matches
+    all_counties = []
+    for region_data in REGIONAL_ADVISORS["regions"].values():
+        all_counties.extend(region_data["counties"])
+    
+    # Find close matches (allowing for typos)
+    close_matches = get_close_matches(county_lower, all_counties, n=1, cutoff=0.6)
+    
+    if close_matches:
+        matched_county = close_matches[0]
+        # Now find which region this county belongs to
+        for region_num, region_data in REGIONAL_ADVISORS["regions"].items():
+            if matched_county in region_data["counties"]:
+                return {
+                    "region": region_num,
+                    "advisor_name": region_data["advisor"],
+                    "phone": region_data["phone"],
+                    "email": region_data["email"],
+                    "counties_served": region_data["counties"],
+                    "matched_county": matched_county  # Include what we matched to
+                }
     
     return None
 
@@ -685,10 +709,20 @@ def search_all_content(query, documents, grant_data):
     for region_data in REGIONAL_ADVISORS["regions"].values():
         pa_counties.extend(region_data["counties"])
     
+    # First try exact match for counties
     for word in query_words:
         if word in pa_counties:
             county_match = word
             break
+    
+    # If no exact match, try fuzzy matching for potential typos
+    if not county_match:
+        from difflib import get_close_matches
+        for word in query_words:
+            close_matches = get_close_matches(word, pa_counties, n=1, cutoff=0.6)
+            if close_matches:
+                county_match = close_matches[0]
+                break
     
     # If county mentioned, add regional advisor info to results
     if county_match:
@@ -803,6 +837,11 @@ def main():
         if county_input:
             advisor_info = get_regional_advisor(county_input)
             if advisor_info:
+                # Check if we matched a typo
+                matched_county = advisor_info.get('matched_county', county_input.lower())
+                if matched_county != county_input.lower():
+                    st.info(f"Showing results for '{matched_county.title()}' County")
+                
                 st.markdown(f"""
                 <div class="advisor-card">
                     <h4 style="margin-top: 0;">Your Regional Advisor (Region {advisor_info['region']})</h4>
