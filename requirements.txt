@@ -11,4 +11,11 @@ fastapi==0.104.1
 pydantic==2.5.0
 uvicorn==0.24.0
 httpx==0.25.2
-pyaudioop
+
+
+streamlit==1.31.0
+openai==1.12.0
+PyPDF2==3.0.1
+beautifulsoup4==4.12.3
+requests==2.31.0
+lxml==5.1.0
