@@ -23,8 +23,7 @@ import streamlit.components.v1 as components
 st.set_page_config(page_title="PA DCNR Grant Assistant", page_icon="🌲", layout="wide")
 
 # IMPORTANT: Replace this with your actual OpenAI API key
-OPENAI_API_KEY = "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"  # <-- PUT YOUR API KEY HERE
-
+OPENAI_API_KEY = "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"
 # Custom CSS for animations and styling
 st.markdown("""
 <style>
