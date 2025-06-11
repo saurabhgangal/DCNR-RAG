@@ -27,6 +27,86 @@ st.set_page_config(page_title="PA DCNR Grant Assistant", page_icon="🌲", layou
 # For Streamlit Cloud, it will use the secret
 OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY", "sk-your-actual-api-key-here")
 
+# Regional Advisors Data
+REGIONAL_ADVISORS = {
+    "regions": {
+        "1": {
+            "advisor": "Danielle Guttman",
+            "phone": "(717) 884-6908",
+            "email": "dguttman@pa.gov",
+            "counties": ["philadelphia", "delaware", "chester", "montgomery", "bucks"]
+        },
+        "2": {
+            "advisor": "Jeanne Barrett Ortiz",
+            "phone": "(267) 252-2806",
+            "email": "jeabarrett@pa.gov",
+            "counties": ["northampton", "lehigh", "carbon", "monroe", "pike"]
+        },
+        "3": {
+            "advisor": "Lindsay Baer",
+            "phone": "(717) 858-1185",
+            "email": "libaer@pa.gov",
+            "counties": ["perry", "cumberland", "franklin", "adams", "york", "lancaster", 
+                        "lebanon", "dauphin", "juniata", "mifflin", "huntingdon", "blair", 
+                        "cambria", "bedford", "fulton", "somerset"]
+        },
+        "4": {
+            "advisor": "Wes Fahringer",
+            "phone": "(570) 900-3265",
+            "email": "mfahringer@pa.gov",
+            "counties": ["centre", "clinton", "lycoming", "union", "snyder", 
+                        "northumberland", "montour", "columbia"]
+        },
+        "5": {
+            "advisor": "Adriene Smochek",
+            "phone": "(412) 565-7803",
+            "email": "asmochek@pa.gov",
+            "counties": ["beaver", "allegheny", "washington", "greene", "fayette", 
+                        "westmoreland", "indiana", "armstrong", "butler", "lawrence"]
+        },
+        "6": {
+            "advisor": "Adam Mattis",
+            "phone": "(412) 770-3774",
+            "email": "amattis@pa.gov",
+            "counties": ["erie", "crawford", "mercer", "venango", "forest", "warren", 
+                        "mckean", "elk", "clarion", "jefferson", "clearfield", "potter", 
+                        "tioga", "bradford", "susquehanna", "wayne", "wyoming", "sullivan", 
+                        "lackawanna"]
+        }
+    }
+}
+
+def get_regional_advisor(county_name):
+    """Get the regional advisor for a given county"""
+    county_lower = county_name.lower().strip()
+    
+    for region_num, region_data in REGIONAL_ADVISORS["regions"].items():
+        if county_lower in region_data["counties"]:
+            return {
+                "region": region_num,
+                "advisor_name": region_data["advisor"],
+                "phone": region_data["phone"],
+                "email": region_data["email"],
+                "counties_served": region_data["counties"]
+            }
+    
+    return None
+
+def format_advisor_info(advisor_info):
+    """Format advisor information for display"""
+    if not advisor_info:
+        return "Regional advisor information not found. Please check the county name."
+    
+    return f"""
+**Your Regional Advisor (Region {advisor_info['region']}):**
+👤 **{advisor_info['advisor_name']}**
+📞 Phone: {advisor_info['phone']}
+📧 Email: {advisor_info['email']}
+
+This advisor serves {len(advisor_info['counties_served'])} counties in your region.
+Contact them early in your grant planning process for guidance and support!
+"""
+
 # Custom CSS for animations and styling
 st.markdown("""
 <style>
@@ -139,6 +219,16 @@ st.markdown("""
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     }
+    
+    /* Regional advisor card styling */
+    .advisor-card {
+        background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        border-left: 4px solid #2196F3;
+        animation: slideIn 0.5s ease-out;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -210,7 +300,8 @@ class GrantRAGSystem:
                 'general_info': '',
                 'deadlines': [],
                 'eligibility_criteria': {},
-                'planning_session_transcript': self.get_planning_session_content()
+                'planning_session_transcript': self.get_planning_session_content(),
+                'regional_advisors': REGIONAL_ADVISORS
             }
             
             # Extract general program information
@@ -258,7 +349,8 @@ class GrantRAGSystem:
                 'general_info': '',
                 'deadlines': [],
                 'eligibility_criteria': {},
-                'planning_session_transcript': self.get_planning_session_content()
+                'planning_session_transcript': self.get_planning_session_content(),
+                'regional_advisors': REGIONAL_ADVISORS
             }
     
     def get_planning_session_content(self):
@@ -335,7 +427,10 @@ Key Tips:
 - Involve qualified consultants early
 - Obtain detailed cost estimates
 - Reference help text in grant application
-- Visit apps.dcnr.pa.gov for resources"""
+- Visit apps.dcnr.pa.gov for resources
+
+REGIONAL ADVISORS:
+It's important to contact your regional advisor early in the grant planning process. They can provide guidance on your application and help ensure you meet all requirements."""
     
     def load_grant_data(self):
         """Load saved grant data or scrape if needed"""
@@ -347,6 +442,11 @@ Key Tips:
             last_update = datetime.fromisoformat(data['last_updated'])
             if datetime.now() - last_update > timedelta(days=30):
                 return self.scrape_grant_data()
+            
+            # Ensure regional advisors are included
+            if 'regional_advisors' not in data:
+                data['regional_advisors'] = REGIONAL_ADVISORS
+                
             return data
         else:
             return self.scrape_grant_data()
@@ -356,8 +456,15 @@ Key Tips:
         eligibility_results = {
             'eligible_grants': [],
             'ineligible_grants': [],
-            'recommendations': []
+            'recommendations': [],
+            'regional_advisor': None
         }
+        
+        # Check for regional advisor if county provided
+        if 'county' in user_info:
+            advisor_info = get_regional_advisor(user_info['county'])
+            if advisor_info:
+                eligibility_results['regional_advisor'] = advisor_info
         
         # Basic eligibility criteria (to be enhanced with actual DCNR rules)
         criteria = {
@@ -402,6 +509,8 @@ Key Tips:
                     'reasons': reasons
                 })
         
+        return eligibility_results
+    
     def evaluate_grant_application(self, application_info: Dict) -> Dict:
         """Evaluate grant application and provide approval chances"""
         score = 0
@@ -535,6 +644,12 @@ Key Tips:
             approval_chance = "Very Low (<20%)"
             overall_feedback = "Major issues need to be addressed. Consider seeking technical assistance."
         
+        # Add regional advisor recommendation if county provided
+        if 'county' in application_info:
+            advisor_info = get_regional_advisor(application_info['county'])
+            if advisor_info:
+                feedback.append(f"💡 Contact your regional advisor {advisor_info['advisor_name']} at {advisor_info['phone']} for guidance")
+        
         return {
             'score': score,
             'max_score': max_score,
@@ -563,6 +678,24 @@ def search_all_content(query, documents, grant_data):
     """Search in both uploaded documents and grant data"""
     query_words = query.lower().split()
     results = []
+    
+    # Check if query mentions a county for regional advisor
+    county_match = None
+    pa_counties = []
+    for region_data in REGIONAL_ADVISORS["regions"].values():
+        pa_counties.extend(region_data["counties"])
+    
+    for word in query_words:
+        if word in pa_counties:
+            county_match = word
+            break
+    
+    # If county mentioned, add regional advisor info to results
+    if county_match:
+        advisor_info = get_regional_advisor(county_match)
+        if advisor_info:
+            advisor_snippet = f"Regional Advisor for {county_match.title()} County: {advisor_info['advisor_name']}, Phone: {advisor_info['phone']}, Email: {advisor_info['email']}"
+            results.append((10, "DCNR Regional Advisors", advisor_snippet))
     
     # Search in uploaded documents
     for filename, content in documents.items():
@@ -659,6 +792,31 @@ def main():
         
         st.divider()
         
+        # Regional Advisor Lookup
+        st.header("🗺️ Find Your Regional Advisor")
+        county_input = st.text_input(
+            "Enter your county name",
+            placeholder="e.g., Lawrence, Chester, Erie",
+            help="Find your DCNR regional advisor by county"
+        )
+        
+        if county_input:
+            advisor_info = get_regional_advisor(county_input)
+            if advisor_info:
+                st.markdown(f"""
+                <div class="advisor-card">
+                    <h4 style="margin-top: 0;">Your Regional Advisor (Region {advisor_info['region']})</h4>
+                    <p><strong>👤 {advisor_info['advisor_name']}</strong></p>
+                    <p>📞 {advisor_info['phone']}</p>
+                    <p>📧 <a href="mailto:{advisor_info['email']}">{advisor_info['email']}</a></p>
+                    <p style="font-size: 0.9em; color: #666;">Serves {len(advisor_info['counties_served'])} counties in your region</p>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.error("County not found. Please check the spelling.")
+        
+        st.divider()
+        
         # Grant Data Status with pulse animation
         st.header("📊 Grant Data Status")
         if st.session_state.grant_data:
@@ -729,6 +887,12 @@ def main():
                 help="Select your organization type"
             )
             
+            county_for_eligibility = st.text_input(
+                "Your County",
+                placeholder="e.g., Lawrence",
+                help="Enter your county to get regional advisor info"
+            )
+            
             col1, col2 = st.columns(2)
             with col1:
                 has_501c3 = st.checkbox("501(c)(3) Status")
@@ -742,12 +906,21 @@ def main():
                 user_info = {
                     'entity_type': entity_type,
                     'has_501c3': has_501c3,
-                    'has_matching_funds': has_matching_funds
+                    'has_matching_funds': has_matching_funds,
+                    'county': county_for_eligibility
                 }
                 
                 results = rag_system.check_eligibility(user_info)
                 
                 st.subheader("Eligibility Results:")
+                
+                # Show regional advisor if county provided
+                if results.get('regional_advisor'):
+                    st.markdown(f"""
+                    <div class="advisor-card">
+                        {format_advisor_info(results['regional_advisor'])}
+                    </div>
+                    """, unsafe_allow_html=True)
                 
                 if results['eligible_grants']:
                     st.success("✅ Potentially Eligible For:")
@@ -779,6 +952,12 @@ def main():
                 ["Municipality", "County", "School District", "Nonprofit 501(c)(3)", 
                  "Council of Governments", "Conservation District", "Other"],
                 help="Your organization type affects funding eligibility"
+            )
+            
+            eval_county = st.text_input(
+                "Your County",
+                placeholder="e.g., Lawrence",
+                help="Enter your county for regional advisor recommendation"
             )
             
             col1, col2 = st.columns(2)
@@ -834,6 +1013,7 @@ def main():
                     
                     eval_info = {
                         'entity_type': eval_entity_type,
+                        'county': eval_county,
                         'footfall': footfall,
                         'population_served': population,
                         'project_type': project_type,
@@ -912,6 +1092,7 @@ def main():
         st.markdown("### 💬 Try asking me about:")
         
         sample_questions = [
+            "I'm from Lawrence County, who is my regional advisor?",
             "What types of DCNR grants are available?",
             "What are the eligibility requirements for Recreation and Conservation grants?",
             "When is the 2025 grant application deadline?",
@@ -919,11 +1100,10 @@ def main():
             "Can nonprofits apply for DCNR grants?",
             "What documents do I need for the application?",
             "What is a master site development plan?",
+            "Who should I contact in Chester County for grant help?",
             "What are the ready-to-go requirements for planning applications?",
             "What types of planning projects does DCNR fund?",
-            "How do I develop a scope of work for my grant?",
-            "What is the typical grant award range for planning projects?",
-            "Who should I contact for help with my application?"
+            "I need help from my regional advisor in Erie County"
         ]
         
         # Create animated question cards
@@ -935,7 +1115,7 @@ def main():
                     st.rerun()
     
     # Chat input
-    if prompt := st.chat_input("Ask about DCNR grants, eligibility, deadlines, or application process"):
+    if prompt := st.chat_input("Ask about DCNR grants, eligibility, deadlines, regional advisors, or application process"):
         # Add user message
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
@@ -966,8 +1146,10 @@ def main():
                     
                     # Create prompt
                     system_prompt = """You are an expert grant advisor for Pennsylvania DCNR Community Conservation Partnership Program grants. 
-                    Help users understand grant opportunities, eligibility requirements, application processes, and deadlines.
+                    Help users understand grant opportunities, eligibility requirements, application processes, deadlines, and connect them with their regional advisors.
                     Be specific and helpful, citing sources when possible. Use emojis occasionally to make responses friendlier.
+                    
+                    When users mention a Pennsylvania county, always provide their regional advisor's contact information.
                     
                     You can also evaluate grant applications based on these scoring criteria:
                     - Entity Type (20 points): Municipalities/counties score highest, nonprofits limited
@@ -981,14 +1163,16 @@ def main():
                     - 80+ points: Excellent chances (80-95%)
                     - 65-79 points: Good chances (60-80%)
                     - 50-64 points: Moderate chances (40-60%)
-                    - Below 50: Need significant improvements"""
+                    - Below 50: Need significant improvements
+                    
+                    Always emphasize the importance of contacting regional advisors early in the grant planning process."""
                     
                     user_prompt = f"""Context from documents and website:
 {context}
 
 Question: {prompt}
 
-Please provide a helpful answer based on the context. If discussing eligibility, be specific about requirements."""
+Please provide a helpful answer based on the context. If a Pennsylvania county is mentioned, include the regional advisor's contact information."""
                     
                     # Get response from OpenAI
                     try:
@@ -1011,7 +1195,7 @@ Please provide a helpful answer based on the context. If discussing eligibility,
                     except Exception as e:
                         answer = f"Error generating response: {str(e)}"
                 else:
-                    answer = "I couldn't find specific information about that in the uploaded documents or grant data. Try asking about grant types, eligibility requirements, or application deadlines."
+                    answer = "I couldn't find specific information about that in the uploaded documents or grant data. Try asking about grant types, eligibility requirements, application deadlines, or your regional advisor by mentioning your county."
             else:
                 # Non-AI response when API key is not configured
                 answer = "🔍 **Search Results:**\n\n"
@@ -1027,6 +1211,7 @@ Some general information about PA DCNR grants:
 • Partnership grants for nonprofits and educational institutions  
 • Land Trust grants for conservation organizations
 • Most grants require matching funds
+• Contact your regional advisor for guidance
 
 💡 *Configure an OpenAI API key in the main area above for detailed AI-powered answers!*"""
             
