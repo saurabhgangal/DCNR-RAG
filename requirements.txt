@@ -1,0 +1,14 @@
+# Core dependencies with compatible versions
+gradio==3.50.2
+openai==1.12.0
+chromadb==0.4.22
+PyPDF2==3.0.1
+tiktoken==0.5.2
+python-multipart==0.0.6
+
+# These will be installed automatically but specifying versions for consistency
+fastapi==0.104.1
+pydantic==2.5.0
+uvicorn==0.24.0
+httpx==0.25.2
+pyaudioop
