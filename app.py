@@ -25,13 +25,7 @@ st.set_page_config(page_title="PA DCNR Grant Assistant", page_icon="🌲", layou
 # IMPORTANT: Replace this with your actual OpenAI API key
 # For local development, use the hardcoded key
 # For Streamlit Cloud, it will use the secret
-try:
-    # This line automatically gets the key from Streamlit Cloud secrets
-    OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-except (FileNotFoundError, KeyError):
-    # Fallback for local development
-    OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-#OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY", "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")
+OPENAI_API_KEY = st.secrets.get("OPENAI_API_KEY", "sk-your-actual-api-key-here")
 
 # Custom CSS for animations and styling
 st.markdown("""
@@ -215,7 +209,8 @@ class GrantRAGSystem:
                 'grants': [],
                 'general_info': '',
                 'deadlines': [],
-                'eligibility_criteria': {}
+                'eligibility_criteria': {},
+                'planning_session_transcript': self.get_planning_session_content()
             }
             
             # Extract general program information
@@ -256,7 +251,91 @@ class GrantRAGSystem:
             
         except Exception as e:
             st.error(f"Error scraping website: {str(e)}")
-            return None
+            # Return at least the planning session content
+            return {
+                'last_updated': datetime.now().isoformat(),
+                'grants': [],
+                'general_info': '',
+                'deadlines': [],
+                'eligibility_criteria': {},
+                'planning_session_transcript': self.get_planning_session_content()
+            }
+    
+    def get_planning_session_content(self):
+        """Get the DCNR planning session transcript content"""
+        return """DCNR Community Conservation Partnerships Program - Planning Session Information
+
+Important Dates:
+- Grant applications accepted: January 21st, 2025 through April 2nd, 2025
+- Application deadline: April 2nd, 2025 at 4:00 PM
+
+Eligible Applicants:
+- Municipalities
+- Municipal authorities
+- Council of Governments
+- Conservation districts
+- School districts
+- Nonprofit 501c3 organizations
+
+Note: Municipal applicants are strongly encouraged because they are eligible for Keystone Fund. Nonprofits are only eligible for environmental stewardship funds, which is very limited.
+
+Planning Project Types:
+1. Master Site Development Plans
+   - Site-specific plan for development, rehabilitation, use, and management
+   - Focus on one site owned or controlled by applicant
+   - Typical grant award: $25,000 to $75,000
+
+2. Comprehensive Recreation, Park, Open Space & Greenway Plans
+   - Long-term development for park recreation systems
+   - Can be municipal, county, or regional scale
+   - Establishes priorities, actions, costs, and timeline
+
+3. Conservation Management/Stewardship Plans
+   - Analyzes conservation of natural areas and critical habitat
+   - Includes public access and passive recreation opportunities
+   - Requires collaboration with conservancy or land trust
+
+4. Swimming Pool Complex Feasibility Studies
+   - Structural assessment of existing features
+   - Market analysis and financial capability assessment
+   - Public engagement essential
+
+5. Indoor Recreation Facility Feasibility Studies
+   - For recreation centers, gymnasiums, indoor ice rinks
+   - Includes parking, accessibility, and site amenities
+   - Focus on one site only
+
+Grant Requirements:
+- Minimum of two quotes from qualified consultants required
+- Dollar-for-dollar match requirement
+- Detailed scope of work required (not lump sum)
+- Public participation required for all plans
+- For existing facilities: 25-year minimum lease or ownership
+
+Ready-to-Go Status Requirements:
+1. Clear and detailed scope of work uploaded
+2. Realistic, detailed budget (no lump sums)
+3. Funding commitment letter for match
+4. Site control documentation (for site-specific plans)
+
+Budget Categories:
+- Contracted professional services
+- Donated professional services
+- Other project costs (cash and non-cash)
+
+Scoring (100 points maximum):
+- Ready-to-go status
+- Criteria questions responses
+- Consistency with local/regional plans
+- Partnerships
+
+Key Tips:
+- Contact your bureau regional advisor early
+- Review frequently asked questions document
+- Involve qualified consultants early
+- Obtain detailed cost estimates
+- Reference help text in grant application
+- Visit apps.dcnr.pa.gov for resources"""
     
     def load_grant_data(self):
         """Load saved grant data or scrape if needed"""
@@ -323,13 +402,148 @@ class GrantRAGSystem:
                     'reasons': reasons
                 })
         
-        # Generate recommendations
-        if not eligibility_results['eligible_grants']:
-            eligibility_results['recommendations'].append(
-                "Consider partnering with an eligible organization"
-            )
+    def evaluate_grant_application(self, application_info: Dict) -> Dict:
+        """Evaluate grant application and provide approval chances"""
+        score = 0
+        max_score = 100
+        feedback = []
+        strengths = []
+        weaknesses = []
         
-        return eligibility_results
+        # Entity Type Score (20 points)
+        entity_type = application_info.get('entity_type', '').lower()
+        if 'municipality' in entity_type or 'county' in entity_type:
+            score += 20
+            strengths.append("✅ Municipal/County applicants have access to Keystone Fund")
+        elif 'council of governments' in entity_type:
+            score += 18
+            strengths.append("✅ Council of Governments is a strong eligible applicant")
+        elif 'school' in entity_type:
+            score += 15
+            strengths.append("✅ School districts are eligible applicants")
+        elif 'nonprofit' in entity_type or '501c3' in entity_type:
+            score += 10
+            weaknesses.append("⚠️ Nonprofits limited to environmental stewardship funds only")
+        else:
+            score += 5
+            weaknesses.append("❌ Entity type may need partnership with eligible organization")
+        
+        # Community Impact Score (20 points)
+        footfall = application_info.get('footfall', 0)
+        population_served = application_info.get('population_served', 0)
+        
+        if footfall > 0 or population_served > 0:
+            impact_number = max(footfall, population_served)
+            if impact_number >= 5000:
+                score += 20
+                strengths.append(f"✅ Strong community impact: {impact_number:,} people served")
+            elif impact_number >= 1000:
+                score += 15
+                strengths.append(f"✅ Good community impact: {impact_number:,} people served")
+            elif impact_number >= 100:
+                score += 10
+                feedback.append(f"📊 Moderate community impact: {impact_number:,} people served")
+            else:
+                score += 5
+                weaknesses.append(f"❌ Low community impact: only {impact_number} people served")
+                feedback.append("💡 Consider partnerships to increase community reach")
+        
+        # Matching Funds Score (20 points)
+        has_matching_funds = application_info.get('has_matching_funds', False)
+        match_percentage = application_info.get('match_percentage', 0)
+        
+        if has_matching_funds:
+            if match_percentage >= 100:
+                score += 20
+                strengths.append("✅ Full dollar-for-dollar match secured")
+            elif match_percentage >= 50:
+                score += 15
+                strengths.append(f"✅ {match_percentage}% match identified")
+            else:
+                score += 10
+                weaknesses.append("⚠️ Partial match may need to be increased")
+        else:
+            weaknesses.append("❌ No matching funds identified - this is required!")
+        
+        # Project Readiness Score (20 points)
+        has_scope = application_info.get('has_detailed_scope', False)
+        has_quotes = application_info.get('has_consultant_quotes', False)
+        has_site_control = application_info.get('has_site_control', False)
+        
+        readiness_score = 0
+        if has_scope:
+            readiness_score += 7
+            strengths.append("✅ Detailed scope of work prepared")
+        else:
+            weaknesses.append("❌ Need detailed scope of work")
+            
+        if has_quotes:
+            readiness_score += 7
+            strengths.append("✅ Consultant quotes obtained")
+        else:
+            weaknesses.append("❌ Need minimum 2 consultant quotes")
+            
+        if has_site_control:
+            readiness_score += 6
+            strengths.append("✅ Site control documented")
+        elif application_info.get('project_type', '').lower() in ['master site', 'feasibility']:
+            weaknesses.append("❌ Site control required for this project type")
+            
+        score += readiness_score
+        
+        # Public Support Score (10 points)
+        has_public_support = application_info.get('has_public_support', False)
+        has_partnerships = application_info.get('has_partnerships', False)
+        
+        if has_public_support:
+            score += 5
+            strengths.append("✅ Public support demonstrated")
+        else:
+            feedback.append("💡 Consider conducting public meetings or surveys")
+            
+        if has_partnerships:
+            score += 5
+            strengths.append("✅ Strong partnerships in place")
+        else:
+            feedback.append("💡 Consider partnering with other organizations")
+        
+        # Planning Priorities Score (10 points)
+        addresses_equity = application_info.get('addresses_equity', False)
+        rehabilitation_project = application_info.get('rehabilitation_project', False)
+        
+        if addresses_equity:
+            score += 5
+            strengths.append("✅ Addresses recreation for all/equity")
+        if rehabilitation_project:
+            score += 5
+            strengths.append("✅ Focuses on rehabilitation of existing facilities")
+        
+        # Calculate approval chances
+        if score >= 80:
+            approval_chance = "Excellent (80-95%)"
+            overall_feedback = "Your application appears very strong! Make sure all documentation is complete."
+        elif score >= 65:
+            approval_chance = "Good (60-80%)"
+            overall_feedback = "Your application has good potential. Address the weaknesses to improve chances."
+        elif score >= 50:
+            approval_chance = "Moderate (40-60%)"
+            overall_feedback = "Your application needs improvement. Focus on addressing major weaknesses."
+        elif score >= 35:
+            approval_chance = "Low (20-40%)"
+            overall_feedback = "Significant improvements needed. Consider partnering or waiting until better prepared."
+        else:
+            approval_chance = "Very Low (<20%)"
+            overall_feedback = "Major issues need to be addressed. Consider seeking technical assistance."
+        
+        return {
+            'score': score,
+            'max_score': max_score,
+            'approval_chance': approval_chance,
+            'strengths': strengths,
+            'weaknesses': weaknesses,
+            'feedback': feedback,
+            'overall_feedback': overall_feedback
+        }
 
 # Initialize the system
 rag_system = GrantRAGSystem()
@@ -377,6 +591,20 @@ def search_all_content(query, documents, grant_data):
                 snippet = grant_text[snippet_start:snippet_end]
                 results.append((score, "PA DCNR Website", snippet))
     
+    # Search in planning session transcript
+    planning_content = grant_data.get('planning_session_transcript', '')
+    if planning_content:
+        planning_lower = planning_content.lower()
+        score = sum(1 for word in query_words if word in planning_lower)
+        
+        if score > 0:
+            snippet_start = planning_lower.find(query_words[0])
+            if snippet_start != -1:
+                snippet_start = max(0, snippet_start - 100)
+                snippet_end = min(len(planning_content), snippet_start + 500)
+                snippet = planning_content[snippet_start:snippet_end]
+                results.append((score, "DCNR Planning Session", snippet))
+    
     # Sort by relevance
     results.sort(key=lambda x: x[0], reverse=True)
     return results[:5]
@@ -404,26 +632,8 @@ def main():
     # Initialize OpenAI client
     client = get_openai_client()
     
-    # Check if API key is properly set
-    if OPENAI_API_KEY == "sk-your-actual-api-key-here":
-        st.error("⚠️ OpenAI API key not configured! Please update the OPENAI_API_KEY variable in the code.")
-        st.info("Replace 'sk-your-actual-api-key-here' with your actual OpenAI API key at the top of the code.")
-        st.stop()
-    
     if not client:
-        st.error("⚠️ Failed to initialize OpenAI client. Please check your API key and internet connection.")
-        
-        # Provide troubleshooting steps
-        st.info("""
-        **Troubleshooting Steps:**
-        1. Make sure you have the latest OpenAI library: `pip install "openai>=1.0.0"`
-        2. Check that your API key is valid
-        3. Try running this in your terminal to test:
-        ```python
-        from openai import OpenAI
-        client = OpenAI(api_key="your-key-here")
-        ```
-        """)
+        st.error("⚠️ Failed to initialize OpenAI client. Please check your API key configuration.")
         st.stop()
     
     # Load grant data with animation
@@ -558,6 +768,135 @@ def main():
                     for rec in results['recommendations']:
                         st.write(f"• {rec}")
         
+        # Grant Evaluation Tool
+        st.divider()
+        st.header("📊 Grant Evaluation Tool")
+        st.markdown("*Evaluate your chances of grant approval*")
+        
+        with st.form("evaluation_form"):
+            eval_entity_type = st.selectbox(
+                "Organization Type",
+                ["Municipality", "County", "School District", "Nonprofit 501(c)(3)", 
+                 "Council of Governments", "Conservation District", "Other"],
+                help="Your organization type affects funding eligibility"
+            )
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                footfall = st.number_input(
+                    "Daily Visitors/Users",
+                    min_value=0,
+                    help="Average daily footfall at your facility"
+                )
+            with col2:
+                population = st.number_input(
+                    "Population Served",
+                    min_value=0,
+                    help="Total community population served"
+                )
+            
+            project_type = st.selectbox(
+                "Project Type",
+                ["Master Site Development Plan", "Comprehensive Recreation Plan",
+                 "Feasibility Study", "Conservation Management Plan"],
+                help="Type of planning project"
+            )
+            
+            st.markdown("**Project Readiness**")
+            col3, col4 = st.columns(2)
+            with col3:
+                has_scope = st.checkbox("Detailed scope of work prepared")
+                has_quotes = st.checkbox("Have 2+ consultant quotes")
+                has_matching = st.checkbox("Matching funds secured")
+            with col4:
+                has_site = st.checkbox("Site control (if applicable)")
+                has_public = st.checkbox("Public support demonstrated")
+                has_partners = st.checkbox("Partnerships established")
+            
+            if has_matching:
+                match_percent = st.slider(
+                    "Match percentage secured",
+                    min_value=0,
+                    max_value=200,
+                    value=100,
+                    help="DCNR requires dollar-for-dollar (100%) match"
+                )
+            else:
+                match_percent = 0
+            
+            st.markdown("**Project Priorities**")
+            addresses_equity = st.checkbox("Addresses recreation equity/accessibility")
+            is_rehabilitation = st.checkbox("Rehabilitation of existing facilities")
+            
+            if st.form_submit_button("🎯 Evaluate Application", type="primary"):
+                with st.spinner("Evaluating your application..."):
+                    time.sleep(1)  # Animation effect
+                    
+                    eval_info = {
+                        'entity_type': eval_entity_type,
+                        'footfall': footfall,
+                        'population_served': population,
+                        'project_type': project_type,
+                        'has_detailed_scope': has_scope,
+                        'has_consultant_quotes': has_quotes,
+                        'has_site_control': has_site,
+                        'has_matching_funds': has_matching,
+                        'match_percentage': match_percent,
+                        'has_public_support': has_public,
+                        'has_partnerships': has_partners,
+                        'addresses_equity': addresses_equity,
+                        'rehabilitation_project': is_rehabilitation
+                    }
+                    
+                    results = rag_system.evaluate_grant_application(eval_info)
+                    
+                    # Display results with visual appeal
+                    st.subheader("📈 Evaluation Results")
+                    
+                    # Score gauge
+                    score_percentage = (results['score'] / results['max_score']) * 100
+                    if score_percentage >= 80:
+                        color = "#4CAF50"  # Green
+                    elif score_percentage >= 60:
+                        color = "#FFC107"  # Amber
+                    else:
+                        color = "#F44336"  # Red
+                    
+                    st.markdown(f"""
+                    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, {color}22, {color}11); border-radius: 10px; margin: 10px 0;">
+                        <h1 style="margin: 0; color: {color};">{results['score']}/{results['max_score']}</h1>
+                        <p style="margin: 5px 0; font-size: 1.2em; font-weight: bold;">Approval Chance: {results['approval_chance']}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Progress bar
+                    st.progress(score_percentage / 100)
+                    
+                    # Strengths
+                    if results['strengths']:
+                        st.success("**Strengths:**")
+                        for strength in results['strengths']:
+                            st.write(strength)
+                    
+                    # Weaknesses
+                    if results['weaknesses']:
+                        st.error("**Areas for Improvement:**")
+                        for weakness in results['weaknesses']:
+                            st.write(weakness)
+                    
+                    # Additional feedback
+                    if results['feedback']:
+                        st.info("**Recommendations:**")
+                        for feedback in results['feedback']:
+                            st.write(feedback)
+                    
+                    # Overall feedback
+                    st.markdown(f"""
+                    <div class="pulse" style="padding: 15px; background: #E3F2FD; border-radius: 5px; margin-top: 10px;">
+                        <strong>Overall Assessment:</strong> {results['overall_feedback']}
+                    </div>
+                    """, unsafe_allow_html=True)
+        
         st.markdown('</div>', unsafe_allow_html=True)
     
     # Main chat area with animations
@@ -575,11 +914,16 @@ def main():
         sample_questions = [
             "What types of DCNR grants are available?",
             "What are the eligibility requirements for Recreation and Conservation grants?",
-            "When are the grant application deadlines?",
+            "When is the 2025 grant application deadline?",
             "How much matching funding is required?",
             "Can nonprofits apply for DCNR grants?",
             "What documents do I need for the application?",
-            "How can land trusts qualify for funding?"
+            "What is a master site development plan?",
+            "What are the ready-to-go requirements for planning applications?",
+            "What types of planning projects does DCNR fund?",
+            "How do I develop a scope of work for my grant?",
+            "What is the typical grant award range for planning projects?",
+            "Who should I contact for help with my application?"
         ]
         
         # Create animated question cards
@@ -623,7 +967,21 @@ def main():
                     # Create prompt
                     system_prompt = """You are an expert grant advisor for Pennsylvania DCNR Community Conservation Partnership Program grants. 
                     Help users understand grant opportunities, eligibility requirements, application processes, and deadlines.
-                    Be specific and helpful, citing sources when possible. Use emojis occasionally to make responses friendlier."""
+                    Be specific and helpful, citing sources when possible. Use emojis occasionally to make responses friendlier.
+                    
+                    You can also evaluate grant applications based on these scoring criteria:
+                    - Entity Type (20 points): Municipalities/counties score highest, nonprofits limited
+                    - Community Impact (20 points): Based on population served or facility usage
+                    - Matching Funds (20 points): Dollar-for-dollar match required
+                    - Project Readiness (20 points): Scope, quotes, site control
+                    - Public Support (10 points): Demonstrated support and partnerships
+                    - Planning Priorities (10 points): Equity and rehabilitation projects score higher
+                    
+                    If asked about approval chances, explain that applications scoring:
+                    - 80+ points: Excellent chances (80-95%)
+                    - 65-79 points: Good chances (60-80%)
+                    - 50-64 points: Moderate chances (40-60%)
+                    - Below 50: Need significant improvements"""
                     
                     user_prompt = f"""Context from documents and website:
 {context}
