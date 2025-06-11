@@ -183,8 +183,8 @@ st.markdown("""
     
     /* PA Logo styling */
     .pa-logo {
-        width: 80px;
-        height: 80px;
+        width: 280px;
+        height: 280px;
         margin: 0 auto 1rem;
         display: block;
         animation: fadeInDown 1s ease-out;
