@@ -131,17 +131,48 @@ This advisor serves {len(advisor_info['counties_served'])} counties in your regi
 Contact them early in your grant planning process for guidance and support!
 """
 
-# Custom CSS for animations and styling
+# Enhanced CSS with more animations and styling
 st.markdown("""
 <style>
+    /* Import Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    /* Global styles */
+    .stApp {
+        font-family: 'Inter', sans-serif;
+    }
+    
+    /* Hide Streamlit branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    
     /* Animated gradient background for header */
     .main-header {
-        background: linear-gradient(-45deg, #2E7D32, #4CAF50, #66BB6A, #81C784);
+        background: linear-gradient(-45deg, #1a4c2e, #2E7D32, #4CAF50, #66BB6A);
         background-size: 400% 400%;
-        animation: gradient 15s ease infinite;
-        padding: 2rem;
-        border-radius: 10px;
+        animation: gradient 20s ease infinite;
+        padding: 3rem 2rem;
+        border-radius: 20px;
         margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .main-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: shimmer 3s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
     
     @keyframes gradient {
@@ -150,15 +181,37 @@ st.markdown("""
         100% { background-position: 0% 50%; }
     }
     
+    /* PA Logo styling */
+    .pa-logo {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1rem;
+        display: block;
+        animation: fadeInDown 1s ease-out;
+        filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3));
+    }
+    
+    @keyframes fadeInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
     /* Floating animation for icons */
     .floating {
         animation: float 3s ease-in-out infinite;
     }
     
     @keyframes float {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-20px); }
-        100% { transform: translateY(0px); }
+        0% { transform: translateY(0px) rotate(0deg); }
+        33% { transform: translateY(-10px) rotate(5deg); }
+        66% { transform: translateY(-20px) rotate(-5deg); }
+        100% { transform: translateY(0px) rotate(0deg); }
     }
     
     /* Pulse animation for important info */
@@ -167,9 +220,9 @@ st.markdown("""
     }
     
     @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-        100% { transform: scale(1); }
+        0% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.8; }
+        100% { transform: scale(1); opacity: 1; }
     }
     
     /* Slide in animation */
@@ -177,9 +230,39 @@ st.markdown("""
         animation: slideIn 0.5s ease-out;
     }
     
+    .slide-in-left {
+        animation: slideInLeft 0.6s ease-out;
+    }
+    
+    .slide-in-right {
+        animation: slideInRight 0.6s ease-out;
+    }
+    
     @keyframes slideIn {
         from {
             transform: translateX(-100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideInLeft {
+        from {
+            transform: translateX(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideInRight {
+        from {
+            transform: translateX(50px);
             opacity: 0;
         }
         to {
@@ -221,6 +304,9 @@ st.markdown("""
     /* Chat message animation */
     .chat-message {
         animation: fadeInUp 0.5s ease-out;
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 0.5rem 0;
     }
     
     @keyframes fadeInUp {
@@ -234,9 +320,46 @@ st.markdown("""
         }
     }
     
+    /* Sample question cards */
+    .question-card {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 15px;
+        padding: 1.2rem;
+        margin: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        animation: fadeInScale 0.5s ease-out forwards;
+        opacity: 0;
+    }
+    
+    .question-card:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    @keyframes fadeInScale {
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+    
+    /* Staggered animation delay for cards */
+    .question-card:nth-child(1) { animation-delay: 0.1s; }
+    .question-card:nth-child(2) { animation-delay: 0.2s; }
+    .question-card:nth-child(3) { animation-delay: 0.3s; }
+    .question-card:nth-child(4) { animation-delay: 0.4s; }
+    .question-card:nth-child(5) { animation-delay: 0.5s; }
+    .question-card:nth-child(6) { animation-delay: 0.6s; }
+    
     /* Hover effects */
     .stButton > button {
         transition: all 0.3s ease;
+        border-radius: 10px;
+        font-weight: 500;
     }
     
     .stButton > button:hover {
@@ -246,14 +369,149 @@ st.markdown("""
     
     /* Regional advisor card styling */
     .advisor-card {
-        background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
-        padding: 1.5rem;
-        border-radius: 10px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 2rem;
+        border-radius: 20px;
         margin: 1rem 0;
-        border-left: 4px solid #2196F3;
-        animation: slideIn 0.5s ease-out;
+        border-left: 5px solid #fff;
+        animation: slideInLeft 0.6s ease-out;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .advisor-card::after {
+        content: '📍';
+        position: absolute;
+        top: -20px;
+        right: -20px;
+        font-size: 100px;
+        opacity: 0.1;
+        animation: float 4s ease-in-out infinite;
+    }
+    
+    .advisor-card h4 {
+        color: white !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    .advisor-card p {
+        color: white !important;
+        margin: 0.5rem 0 !important;
+    }
+    
+    .advisor-card a {
+        color: #90cdf4 !important;
+        text-decoration: underline;
+    }
+    
+    /* Score display animation */
+    .score-display {
+        animation: zoomIn 0.5s ease-out;
+    }
+    
+    @keyframes zoomIn {
+        from {
+            transform: scale(0);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+    
+    /* Sidebar styling */
+    .css-1d391kg {
+        background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+    
+    /* Status badges */
+    .status-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        animation: slideInRight 0.5s ease-out;
+    }
+    
+    .status-ready {
+        background: linear-gradient(135deg, #4CAF50, #45a049);
+        color: white;
+    }
+    
+    .status-warning {
+        background: linear-gradient(135deg, #ff9800, #f57c00);
+        color: white;
+    }
+    
+    /* Tooltip animation */
+    .tooltip {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 200px;
+        background-color: #555;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 10px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -100px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+    }
+    
+    /* Progress bar styling */
+    .stProgress > div > div > div > div {
+        background: linear-gradient(90deg, #4CAF50, #8BC34A);
+        border-radius: 10px;
+    }
+    
+    /* Animated background pattern */
+    .pattern-bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0.03;
+        z-index: -1;
+        background-image: 
+            repeating-linear-gradient(45deg, transparent, transparent 35px, rgba(76, 175, 80, 0.5) 35px, rgba(76, 175, 80, 0.5) 70px);
+        animation: movePattern 20s linear infinite;
+    }
+    
+    @keyframes movePattern {
+        0% { transform: translate(0, 0); }
+        100% { transform: translate(70px, 70px); }
+    }
+    
+    /* Bounce animation */
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+        40% { transform: translateY(-10px); }
+        60% { transform: translateY(-5px); }
+    }
+    
+    .bounce {
+        animation: bounce 2s infinite;
     }
 </style>
+
+<div class="pattern-bg"></div>
 """, unsafe_allow_html=True)
 
 # Initialize session state
@@ -267,6 +525,10 @@ if 'client' not in st.session_state:
     st.session_state.client = None
 if 'last_update' not in st.session_state:
     st.session_state.last_update = None
+if 'question_clicked' not in st.session_state:
+    st.session_state.question_clicked = False
+if 'pending_question' not in st.session_state:
+    st.session_state.pending_question = None
 
 def get_openai_client():
     """Get or create OpenAI client with minimal configuration"""
@@ -776,25 +1038,114 @@ def search_all_content(query, documents, grant_data):
     results.sort(key=lambda x: x[0], reverse=True)
     return results[:5]
 
+def process_message(prompt, client):
+    """Process a message and generate response"""
+    # Search all content
+    search_results = search_all_content(
+        prompt, 
+        st.session_state.documents,
+        st.session_state.grant_data
+    )
+    
+    if client:
+        # AI-powered response
+        if search_results:
+            # Build context
+            context = "\n\n".join([
+                f"[From {source}]\n{snippet}..."
+                for score, source, snippet in search_results
+            ])
+            
+            # Create prompt
+            system_prompt = """You are an expert grant advisor for Pennsylvania DCNR Community Conservation Partnership Program grants. 
+            Help users understand grant opportunities, eligibility requirements, application processes, deadlines, and connect them with their regional advisors.
+            Be specific and helpful, citing sources when possible. Use emojis occasionally to make responses friendlier.
+            
+            When users mention a Pennsylvania county, always provide their regional advisor's contact information.
+            
+            You can also evaluate grant applications based on these scoring criteria:
+            - Entity Type (20 points): Municipalities/counties score highest, nonprofits limited
+            - Community Impact (20 points): Based on population served or facility usage
+            - Matching Funds (20 points): Dollar-for-dollar match required
+            - Project Readiness (20 points): Scope, quotes, site control
+            - Public Support (10 points): Demonstrated support and partnerships
+            - Planning Priorities (10 points): Equity and rehabilitation projects score higher
+            
+            If asked about approval chances, explain that applications scoring:
+            - 80+ points: Excellent chances (80-95%)
+            - 65-79 points: Good chances (60-80%)
+            - 50-64 points: Moderate chances (40-60%)
+            - Below 50: Need significant improvements
+            
+            Always emphasize the importance of contacting regional advisors early in the grant planning process."""
+            
+            user_prompt = f"""Context from documents and website:
+{context}
+
+Question: {prompt}
+
+Please provide a helpful answer based on the context. If a Pennsylvania county is mentioned, include the regional advisor's contact information."""
+            
+            # Get response from OpenAI
+            try:
+                response = client.chat.completions.create(
+                    model="gpt-3.5-turbo",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    max_tokens=700,
+                    temperature=0.7
+                )
+                
+                answer = response.choices[0].message.content
+                
+                # Add sources
+                sources = list(set([source for _, source, _ in search_results]))
+                answer += f"\n\n📚 **Sources:** {', '.join(sources)}"
+                
+            except Exception as e:
+                answer = f"Error generating response: {str(e)}"
+        else:
+            answer = "I couldn't find specific information about that in the uploaded documents or grant data. Try asking about grant types, eligibility requirements, application deadlines, or your regional advisor by mentioning your county."
+    else:
+        # Non-AI response when API key is not configured
+        answer = "🔍 **Search Results:**\n\n"
+        if search_results:
+            for score, source, snippet in search_results[:3]:
+                answer += f"**From {source}:**\n{snippet[:200]}...\n\n"
+            answer += "\n💡 *Configure an OpenAI API key in the main area above for AI-powered answers!*"
+        else:
+            answer = """I found no specific matches in the available documents. 
+
+Some general information about PA DCNR grants:
+• Recreation and Conservation grants for municipalities and counties
+• Partnership grants for nonprofits and educational institutions  
+• Land Trust grants for conservation organizations
+• Most grants require matching funds
+• Contact your regional advisor for guidance
+
+💡 *Configure an OpenAI API key in the main area above for detailed AI-powered answers!*"""
+    
+    return answer
+
 def main():
-    # Animated header
+    # Animated header with PA logo
     st.markdown("""
     <div class="main-header">
-        <h1 style="color: white; text-align: center; margin: 0;">
+        <img src="https://www.pa.gov/content/dam/copapwp-pagov/en/dcnr/images/logo/PA-Keystone-RGB.svg" 
+             alt="Pennsylvania" class="pa-logo" style="filter: brightness(0) invert(1);">
+        <h1 style="color: white; text-align: center; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
             <span class="floating">🌲</span> PA DCNR Grant Assistant <span class="floating">🌲</span>
         </h1>
-        <p style="color: white; text-align: center; font-size: 1.2em; margin-top: 0.5rem;">
+        <p style="color: white; text-align: center; font-size: 1.3em; margin-top: 0.5rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">
             Your AI assistant for Pennsylvania DCNR Community Conservation Partnership Program grants
+        </p>
+        <p style="color: rgba(255,255,255,0.9); text-align: center; font-size: 1em; margin-top: 1rem;">
+            <span class="bounce">📅</span> Application Deadline: April 2nd, 2025 at 4:00 PM
         </p>
     </div>
     """, unsafe_allow_html=True)
-    
-    # Debug info (remove this after fixing)
-    with st.expander("🔧 Debug Information"):
-        import sys
-        st.write("Python Version:", sys.version)
-        st.write("OpenAI Library Version:", getattr(OpenAI, '__version__', 'Unknown'))
-        st.write("Environment Proxies:", {k: v for k, v in os.environ.items() if 'proxy' in k.lower()})
     
     # Initialize OpenAI client
     client = get_openai_client()
@@ -818,15 +1169,15 @@ def main():
         st.markdown('<div class="slide-in">', unsafe_allow_html=True)
         st.header("⚙️ Configuration")
         
-        # Status indicator
+        # Status indicator with animation
         if client:
-            st.success("✅ AI Assistant Ready!")
+            st.markdown('<div class="status-badge status-ready">✅ AI Assistant Ready!</div>', unsafe_allow_html=True)
         else:
-            st.warning("⚠️ AI features disabled - Check API key")
+            st.markdown('<div class="status-badge status-warning">⚠️ AI features disabled</div>', unsafe_allow_html=True)
         
         st.divider()
         
-        # Regional Advisor Lookup
+        # Regional Advisor Lookup with enhanced styling
         st.header("🗺️ Find Your Regional Advisor")
         county_input = st.text_input(
             "Enter your county name",
@@ -848,7 +1199,7 @@ def main():
                     <p><strong>👤 {advisor_info['advisor_name']}</strong></p>
                     <p>📞 {advisor_info['phone']}</p>
                     <p>📧 <a href="mailto:{advisor_info['email']}">{advisor_info['email']}</a></p>
-                    <p style="font-size: 0.9em; color: #666;">Serves {len(advisor_info['counties_served'])} counties in your region</p>
+                    <p style="font-size: 0.9em; opacity: 0.8;">Serves {len(advisor_info['counties_served'])} counties in your region</p>
                 </div>
                 """, unsafe_allow_html=True)
             else:
@@ -1072,7 +1423,7 @@ def main():
                     # Display results with visual appeal
                     st.subheader("📈 Evaluation Results")
                     
-                    # Score gauge
+                    # Score gauge with animation
                     score_percentage = (results['score'] / results['max_score']) * 100
                     if score_percentage >= 80:
                         color = "#4CAF50"  # Green
@@ -1082,7 +1433,7 @@ def main():
                         color = "#F44336"  # Red
                     
                     st.markdown(f"""
-                    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, {color}22, {color}11); border-radius: 10px; margin: 10px 0;">
+                    <div class="score-display" style="text-align: center; padding: 20px; background: linear-gradient(135deg, {color}22, {color}11); border-radius: 10px; margin: 10px 0;">
                         <h1 style="margin: 0; color: {color};">{results['score']}/{results['max_score']}</h1>
                         <p style="margin: 5px 0; font-size: 1.2em; font-weight: bold;">Approval Chance: {results['approval_chance']}</p>
                     </div>
@@ -1149,9 +1500,24 @@ def main():
         cols = st.columns(3)
         for idx, question in enumerate(sample_questions[:6]):
             with cols[idx % 3]:
-                if st.button(f"❓ {question[:30]}...", key=f"sample_{idx}"):
-                    st.session_state.messages.append({"role": "user", "content": question})
+                if st.button(f"❓ {question[:30]}...", key=f"sample_{idx}", help=question):
+                    st.session_state.pending_question = question
+                    st.session_state.question_clicked = True
                     st.rerun()
+    
+    # Process pending question if exists
+    if st.session_state.question_clicked and st.session_state.pending_question:
+        # Add to messages
+        st.session_state.messages.append({"role": "user", "content": st.session_state.pending_question})
+        
+        # Generate response
+        answer = process_message(st.session_state.pending_question, client)
+        st.session_state.messages.append({"role": "assistant", "content": answer})
+        
+        # Clear the pending question
+        st.session_state.pending_question = None
+        st.session_state.question_clicked = False
+        st.rerun()
     
     # Chat input
     if prompt := st.chat_input("Ask about DCNR grants, eligibility, deadlines, regional advisors, or application process"):
@@ -1167,92 +1533,8 @@ def main():
             # Show typing animation
             message_placeholder.markdown('<div class="loading-dots">Thinking</div>', unsafe_allow_html=True)
             
-            # Search all content
-            search_results = search_all_content(
-                prompt, 
-                st.session_state.documents,
-                st.session_state.grant_data
-            )
-            
-            if client:
-                # AI-powered response
-                if search_results:
-                    # Build context
-                    context = "\n\n".join([
-                        f"[From {source}]\n{snippet}..."
-                        for score, source, snippet in search_results
-                    ])
-                    
-                    # Create prompt
-                    system_prompt = """You are an expert grant advisor for Pennsylvania DCNR Community Conservation Partnership Program grants. 
-                    Help users understand grant opportunities, eligibility requirements, application processes, deadlines, and connect them with their regional advisors.
-                    Be specific and helpful, citing sources when possible. Use emojis occasionally to make responses friendlier.
-                    
-                    When users mention a Pennsylvania county, always provide their regional advisor's contact information.
-                    
-                    You can also evaluate grant applications based on these scoring criteria:
-                    - Entity Type (20 points): Municipalities/counties score highest, nonprofits limited
-                    - Community Impact (20 points): Based on population served or facility usage
-                    - Matching Funds (20 points): Dollar-for-dollar match required
-                    - Project Readiness (20 points): Scope, quotes, site control
-                    - Public Support (10 points): Demonstrated support and partnerships
-                    - Planning Priorities (10 points): Equity and rehabilitation projects score higher
-                    
-                    If asked about approval chances, explain that applications scoring:
-                    - 80+ points: Excellent chances (80-95%)
-                    - 65-79 points: Good chances (60-80%)
-                    - 50-64 points: Moderate chances (40-60%)
-                    - Below 50: Need significant improvements
-                    
-                    Always emphasize the importance of contacting regional advisors early in the grant planning process."""
-                    
-                    user_prompt = f"""Context from documents and website:
-{context}
-
-Question: {prompt}
-
-Please provide a helpful answer based on the context. If a Pennsylvania county is mentioned, include the regional advisor's contact information."""
-                    
-                    # Get response from OpenAI
-                    try:
-                        response = client.chat.completions.create(
-                            model="gpt-3.5-turbo",
-                            messages=[
-                                {"role": "system", "content": system_prompt},
-                                {"role": "user", "content": user_prompt}
-                            ],
-                            max_tokens=700,
-                            temperature=0.7
-                        )
-                        
-                        answer = response.choices[0].message.content
-                        
-                        # Add sources
-                        sources = list(set([source for _, source, _ in search_results]))
-                        answer += f"\n\n📚 **Sources:** {', '.join(sources)}"
-                        
-                    except Exception as e:
-                        answer = f"Error generating response: {str(e)}"
-                else:
-                    answer = "I couldn't find specific information about that in the uploaded documents or grant data. Try asking about grant types, eligibility requirements, application deadlines, or your regional advisor by mentioning your county."
-            else:
-                # Non-AI response when API key is not configured
-                answer = "🔍 **Search Results:**\n\n"
-                if search_results:
-                    for score, source, snippet in search_results[:3]:
-                        answer += f"**From {source}:**\n{snippet[:200]}...\n\n"
-                    answer += "\n💡 *Configure an OpenAI API key in the main area above for AI-powered answers!*"
-                else:
-                    answer = """I found no specific matches in the available documents. 
-
-Some general information about PA DCNR grants:
-• Recreation and Conservation grants for municipalities and counties
-• Partnership grants for nonprofits and educational institutions  
-• Land Trust grants for conservation organizations
-• Most grants require matching funds
-• Contact your regional advisor for guidance
-
-💡 *Configure an OpenAI API key in the main area above for detailed AI-powered answers!*"""
+            # Generate response
+            answer = process_message(prompt, client)
             
             # Display answer with typewriter effect
             message_placeholder.markdown(f'<div class="chat-message">{answer}</div>', unsafe_allow_html=True)
@@ -1262,8 +1544,13 @@ Some general information about PA DCNR grants:
     
     # Footer with animation
     st.markdown("""
-    <div style="text-align: center; margin-top: 3rem; padding: 1rem; color: #666;">
-        <p class="pulse">Made with ❤️ to help Pennsylvania communities access conservation grants</p>
+    <div style="text-align: center; margin-top: 3rem; padding: 2rem; background: linear-gradient(135deg, #f5f5f5, #e0e0e0); border-radius: 20px;">
+        <p class="pulse" style="font-size: 1.1em; color: #333; margin-bottom: 1rem;">
+            Made with ❤️ to help Pennsylvania communities access conservation grants
+        </p>
+        <p style="color: #666; font-size: 0.9em;">
+            🏛️ Commonwealth of Pennsylvania | Department of Conservation and Natural Resources
+        </p>
     </div>
     """, unsafe_allow_html=True)
 
